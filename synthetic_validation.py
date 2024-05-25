@@ -1,6 +1,8 @@
 import configparser
 
 import os
+import threading
+import time
 
 import numpy as np
 import pandas as pd
@@ -156,16 +158,24 @@ class ValidationDashboard(pn.viewable.Viewer):
 
         columns = pn.Row(self.image_record.display_image, pn.Column(text_pane, status_buttons, operations_row))
 
-        panel_template =  pn.template.FastListTemplate(
+        panel_template = pn.template.FastListTemplate(
             title="Synthetic Image Validation", accent=config["PANEL"]["accent"],
             main=[columns, pn.Row(self.data_records.view_df)], theme_toggle=False)
 
         return panel_template
 
-
 data, curr_index = init_setup(config)
 syn_data = SyntheticDataRecord(df=data, curr_idx=curr_index)
 img_data = ImageRecord(image_path=data.loc[curr_index].data_record)
-ValidationDashboard(data_records=syn_data, image_record=img_data).servable()
+panel = ValidationDashboard(data_records=syn_data, image_record=img_data)
+panel.servable()
+def autosave():
+    while True:
+        time.sleep(60 * 2)
+        # do something you want
+        panel.data_records.save_progress()
+        print("Saved!")
 
 
+saver = threading.Thread(target=autosave)
+saver.start()
